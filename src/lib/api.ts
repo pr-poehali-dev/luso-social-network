@@ -2,7 +2,8 @@ const API_BASE = {
   auth: 'https://functions.poehali.dev/1b609dbb-4aa1-4e8b-a20e-199a95f9bb81',
   users: 'https://functions.poehali.dev/7f8f0831-12c8-4f4a-9096-20fdf8495cd0',
   posts: 'https://functions.poehali.dev/9e8c76dd-d50e-4194-8d65-807040ddffba',
-  messages: 'https://functions.poehali.dev/7ef247ba-0c61-4d6f-be25-d32934475b36'
+  messages: 'https://functions.poehali.dev/7ef247ba-0c61-4d6f-be25-d32934475b36',
+  shorts: 'https://functions.poehali.dev/abdfebaf-510c-4dd8-9268-ac49ad01d25f'
 };
 
 export interface User {
@@ -58,6 +59,31 @@ export interface Message {
   created_at: string;
 }
 
+export interface Comment {
+  id: number;
+  user_id: number;
+  username: string;
+  author: string;
+  avatar: string;
+  content: string;
+  time: string;
+}
+
+export interface Short {
+  id: number;
+  user_id: number;
+  username: string;
+  author: string;
+  avatar: string;
+  title?: string;
+  video_url: string;
+  thumbnail?: string;
+  views: number;
+  likes: number;
+  comments: number;
+  time: string;
+}
+
 export const api = {
   async register(username: string, email: string, password: string, full_name: string) {
     const res = await fetch(API_BASE.auth, {
@@ -91,8 +117,12 @@ export const api = {
     return res.json();
   },
 
-  async getPosts(user_id?: number): Promise<{ posts: Post[] }> {
-    const url = user_id ? `${API_BASE.posts}?user_id=${user_id}` : API_BASE.posts;
+  async getPosts(user_id?: number, current_user?: number): Promise<{ posts: Post[] }> {
+    let url = API_BASE.posts;
+    const params = new URLSearchParams();
+    if (user_id) params.append('user_id', user_id.toString());
+    if (current_user) params.append('current_user', current_user.toString());
+    if (params.toString()) url += '?' + params.toString();
     const res = await fetch(url);
     return res.json();
   },
@@ -130,6 +160,43 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'send_message', chat_id, user_id, content })
+    });
+    return res.json();
+  },
+
+  async likePost(user_id: number, post_id: number) {
+    const res = await fetch(API_BASE.posts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'like', user_id, post_id })
+    });
+    return res.json();
+  },
+
+  async addComment(user_id: number, post_id: number, content: string) {
+    const res = await fetch(API_BASE.posts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'comment', user_id, post_id, content })
+    });
+    return res.json();
+  },
+
+  async getComments(post_id: number): Promise<{ comments: Comment[] }> {
+    const res = await fetch(`${API_BASE.posts}?action=comments&post_id=${post_id}`);
+    return res.json();
+  },
+
+  async getShorts(): Promise<{ shorts: Short[] }> {
+    const res = await fetch(API_BASE.shorts);
+    return res.json();
+  },
+
+  async createShort(user_id: number, title: string, video_url: string, thumbnail_url?: string) {
+    const res = await fetch(API_BASE.shorts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id, title, video_url, thumbnail_url })
     });
     return res.json();
   }

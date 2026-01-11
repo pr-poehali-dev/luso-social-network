@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Get shorts list",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "shorts": []
+      }
+    }
+  ]
+}
